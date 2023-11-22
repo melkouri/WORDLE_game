@@ -30,13 +30,14 @@ class WordleGame:
     def check_win(self, feedback):
         return feedback.count('green') == 5
 
+# To do: upadte colors depending on feedback!!
     def update_alphabet_labels(self, used_letters):
         for letter, label in zip("abcdefghijklmnopqrstuvwxyz", self.alphabet_labels):
             if letter in used_letters:
                 label.config(bg='grey')
             else:
                 label.config(bg='white')
-
+# To do: add letters in feedback_labels!!
     def update_feedback_labels(self, attempt, feedback):
         for i, color in enumerate(feedback):
             self.feedback_labels[attempt][i].config(bg=color)
@@ -50,6 +51,7 @@ class WordleGame:
 
         feedback = self.provide_feedback(user_guess)
         self.update_feedback_labels(attempt, feedback)
+# What does it do??? 
         self.update_alphabet_labels(set(user_guess) | set([letter for letter, feedback_color in zip("abcdefghijklmnopqrstuvwxyz", feedback) if feedback_color == 'grey']))
 
         if self.check_win(feedback):
@@ -71,6 +73,7 @@ class WordleGame:
             self.alphabet_labels.append(label)
 
         # Create 6 rows for attempts
+# To do: Keep only 1 guess_entry
         self.guess_entries = []
         self.feedback_labels = []
         for attempt in range(6):
