@@ -7,6 +7,17 @@ class WordleGame:
         self.master = master
         self.master.title("Wordle Game")
 
+        # Set the window size to the whole screen
+        width = self.master.winfo_screenwidth()
+        height = self.master.winfo_screenheight()
+        self.master.geometry(f"{width}x{height}")
+
+        # Allow the window to be resizable both horizontally and vertically
+        self.master.resizable(True, True)
+
+        # Set background color
+        self.master.configure(bg='#cdd7f1')
+
         self.secret_word = self.choose_secret_word()
         self.attempts_left = 6
 
@@ -19,31 +30,40 @@ class WordleGame:
     def provide_feedback(self, user_guess):
         feedback = []
         for i in range(len(self.secret_word)):
-            if user_guess[i] == self.secret_word[i]:
-                feedback.append('green')
-            elif user_guess[i] in self.secret_word:
-                feedback.append('orange')
+            letter = user_guess[i]
+            if letter == self.secret_word[i]:
+                feedback.append((letter, 'green'))
+            elif letter in self.secret_word:
+                feedback.append((letter, 'orange'))
             else:
-                feedback.append('grey')
+                feedback.append((letter, 'grey'))
         return feedback
 
     def check_win(self, feedback):
-        return feedback.count('green') == 5
+        green_count = sum(1 for letter, color in feedback if color == 'green')
+        return green_count == 5
 
-# To do: upadte colors depending on feedback!!
-    def update_alphabet_labels(self, used_letters):
+    def update_alphabet_labels(self, feedback_colors):
         for letter, label in zip("abcdefghijklmnopqrstuvwxyz", self.alphabet_labels):
-            if letter in used_letters:
-                label.config(bg='grey')
-            else:
-                label.config(bg='white')
-# To do: add letters in feedback_labels!!
+            matching_colors = [color for l, color in feedback_colors if l == letter]
+            if matching_colors:
+                prioritized_colors = sorted(matching_colors, key=lambda c: c != 'green')
+                label.config(bg=prioritized_colors[0])
+
     def update_feedback_labels(self, attempt, feedback):
-        for i, color in enumerate(feedback):
+        for i, (letter, color) in enumerate(feedback):
+            # Display feedback labels in front of guess entries in the same row
             self.feedback_labels[attempt][i].config(bg=color)
+            self.feedback_labels[attempt][i].config(bg=color, text=letter)
+
+    def clear_guess_entry(self):
+        for entry in self.guess_entry:
+            entry.delete(0, 'end')
 
     def make_guess(self, attempt):
-        user_guess = "".join(self.guess_entries[attempt][i].get() for i in range(5)).lower()
+        user_guess = "".join(entry.get() for entry in self.guess_entry).lower()
+
+        self.clear_guess_entry()
 
         if len(user_guess) != 5 or not user_guess.isalpha():
             messagebox.showwarning("Invalid Input", "Please enter a valid 5-letter word.")
@@ -51,8 +71,7 @@ class WordleGame:
 
         feedback = self.provide_feedback(user_guess)
         self.update_feedback_labels(attempt, feedback)
-# What does it do??? 
-        self.update_alphabet_labels(set(user_guess) | set([letter for letter, feedback_color in zip("abcdefghijklmnopqrstuvwxyz", feedback) if feedback_color == 'grey']))
+        self.update_alphabet_labels(feedback)
 
         if self.check_win(feedback):
             messagebox.showinfo("Congratulations!", f"You guessed the word: {self.secret_word}")
@@ -65,37 +84,34 @@ class WordleGame:
                 self.master.destroy()
 
     def create_widgets(self):
-        # Create labels for alphabet
-        self.alphabet_labels = []
-        for i, letter in enumerate("abcdefghijklmnopqrstuvwxyz"):
-            label = tk.Label(self.master, width=2, height=1, text=letter, relief=tk.SOLID, borderwidth=1)
-            label.grid(row=0, column=i, padx=5)
-            self.alphabet_labels.append(label)
-
-        # Create 6 rows for attempts
-# To do: Keep only 1 guess_entry
-        self.guess_entries = []
         self.feedback_labels = []
-        for attempt in range(6):
-            # Create 5 text boxes for input
-            guess_row = []
-            for i in range(5):
-                entry = tk.Entry(self.master, width=3, font=('Helvetica', 14), justify='center')
-                entry.grid(row=attempt + 1, column=i, padx=5, pady=5)
-                guess_row.append(entry)
-            self.guess_entries.append(guess_row)
 
-            # Create labels for feedback
+        self.guess_entry = [tk.Entry(self.master, width=4, font=('Helvetica', 18), justify='center') for _ in range(5)]
+        for i, entry in enumerate(self.guess_entry):
+            entry.grid(row=3, column=i + 1, padx=5, pady=5)
+
+        for attempt in range(6):
             feedback_row = []
             for i in range(5):
-                label = tk.Label(self.master, width=3, height=2, bg='white', relief=tk.SOLID, borderwidth=1)
-                label.grid(row=attempt + 7, column=i, padx=5)
-                feedback_row.append(label)
+                feedback_label = tk.Label(self.master, width=3, height=2, bg='white', relief=tk.SOLID, borderwidth=1)
+                feedback_label.grid(row=attempt + 4, column=i+1, padx=5)
+                feedback_row.append(feedback_label)
+
+            
             self.feedback_labels.append(feedback_row)
+
+        # Create labels for alphabet in three rows at the bottom
+        self.alphabet_labels = []
+        alphabet_rows = ["abcdefghijklm", "nopqrstuvwxyz", ""]
+        for row_index, row in enumerate(alphabet_rows):
+            for col_index, letter in enumerate(row):
+                label = tk.Label(self.master, width=3, height=2, text=letter, relief=tk.SOLID, borderwidth=1, font=('Helvetica', 18))
+                label.grid(row=row_index + 11, column=col_index + 1, padx=5, pady=5)
+                self.alphabet_labels.append(label)
 
         # Create Submit Button
         submit_button = tk.Button(self.master, text="Submit Guess", command=lambda: self.make_guess(6 - self.attempts_left))
-        submit_button.grid(row=13, columnspan=5, pady=10)
+        submit_button.grid(row=14, column=6, columnspan=3, pady=10)
 
 def main():
     root = tk.Tk()
@@ -104,3 +120,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
